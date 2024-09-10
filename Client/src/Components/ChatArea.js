@@ -9,8 +9,11 @@ import { useParams } from "react-router-dom";
 import Skeleton from "@mui/material/Skeleton";
 import axios from "axios";
 import { myContext } from "./MainContainer";
-
+import io from 'socket.io-client'
+const ENDPOINT = "http://localhost:8080";
+var socket,chat;
 function ChatArea() {
+  
   const lightTheme = useSelector((state) => state.themeKey);
   const [messageContent, setMessageContent] = useState("");
   const messagesEndRef = useRef(null);
@@ -19,12 +22,15 @@ function ChatArea() {
   // console.log(chat_id, chat_user);
   const userData = JSON.parse(localStorage.getItem("userData"));
   const [allMessages, setAllMessages] = useState([]);
+  const [allMessagesCopy, setAllMessagesCopy] = useState([]);
   // console.log("Chat area id : ", chat_id._id);
   // const refresh = useSelector((state) => state.refreshKey);
   const { refresh, setRefresh } = useContext(myContext);
   const [loaded, setloaded] = useState(false);
+  const [socketConnectionStatus, setSocketConnectionStatus] = useState(false);
   const sendMessage = () => {
     // console.log("SendMessage Fired to", chat_id._id);
+    var data = null;
     const config = {
       headers: {
         Authorization: `Bearer ${userData.data.token}`,
@@ -39,14 +45,37 @@ function ChatArea() {
         },
         config
       )
-      .then(({ data }) => {
+      .then(({ response }) => {
+        data = response
         console.log("Message Fired");
       });
+      socket.emit("newMessage",data)
   };
   // const scrollToBottom = () => {
   //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   // };
 
+
+//connect to socket
+
+useEffect(() => {
+  socket = io(ENDPOINT);
+  socket.emit("setup",userData);
+  socket.on("connection",() => {
+    setSocketConnectionStatus(!socketConnectionStatus);
+  })
+},[])
+
+//new Message received
+useEffect(() => {
+  socket.on("message received",(newMessage) => {
+    if(!allMessagesCopy || allMessagesCopy._id !== newMessage._id){
+
+    }else{
+      setAllMessages([...allMessages],newMessage)
+    }
+  });
+});
   useEffect(() => {
     console.log("Users refreshed");
     const config = {
@@ -59,10 +88,12 @@ function ChatArea() {
       .then(({ data }) => {
         setAllMessages(data);
         setloaded(true);
+        socket.emit("join chat",chat_id);
         // console.log("Data from Acess Chat API ", data);
       });
+      setAllMessagesCopy(allMessages);
     // scrollToBottom();
-  }, [refresh, chat_id, userData.data.token]);
+  }, [refresh, chat_id, userData.data.token,allMessages]);
 
   if (!loaded) {
     return (

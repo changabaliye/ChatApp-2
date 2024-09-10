@@ -31,7 +31,7 @@ function Groups() {
     console.log("Users refreshed : ", user.token);
     const config = {
       headers: {
-        Authorization: `Bearer ${user.token}`,
+        Authorization: `Bearer ${userData.data.token}`,
       },
     };
 
@@ -91,18 +91,18 @@ function Groups() {
                 key={index}
                 onClick={() => {
                   console.log("Creating chat with group", group.name);
-                  // const config = {
-                  //   headers: {
-                  //     Authorization: `Bearer ${userData.data.token}`,
-                  //   },
-                  // };
-                  // axios.post(
-                  //   "http://localhost:8080/chat/",
-                  //   {
-                  //     userId: user._id,
-                  //   },
-                  //   config
-                  // );
+                   const config = {
+                     headers: {
+                       Authorization: `Bearer ${userData.data.token}`,
+                     },
+                   };
+                   axios.post(
+                     "http://localhost:8080/chat/",
+                     {
+                       userId: user._id,
+                     },
+                     config
+                   );
                   dispatch(refreshSidebarFun());
                 }}
               >
